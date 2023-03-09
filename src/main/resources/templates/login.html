@@ -1,15 +1,37 @@
 <!doctype html>
-<html lang="en">
+<html lang="en"
+      xmlns:th="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Login Page</title>
+    <link rel="stylesheet" href="/css/reset.css"/>
+    <link rel="stylesheet" href="/css/main.css"/>
 </head>
 <body>
-<form>
-<input>
-</form>
+<div class="form-container">
+    <form th:action="@{/login}"
+          th:method="POST">
+        <ul role="list">
+            <li class="item">
+                <label for="username">Username</label>
+                <input id="username" type="text" name="username" placeholder="username">
+            </li>
+            <li class="item">
+                <label for="password">Password</label>
+                <input id="password" type="password" name="password" placeholder="password">
+            </li>
+            <li>
+                <button type="submit">Submit</button>
+            </li>
+            <li class="remeber-me">
+                <label for="remember-me">Remember me</label>
+                <input id="remember-me" type="checkbox" name="remember-me">
+            </li>
+        </ul>
+    </form>
+</div>
 </body>
 </html>
