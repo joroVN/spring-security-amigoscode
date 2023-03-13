@@ -1,25 +1,32 @@
 package com.amigoscode.springsecurity.security;
 
+import com.amigoscode.springsecurity.auth.ApplicationUserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.amigoscode.springsecurity.security.UserPermission.COURSE_WRITE;
-import static com.amigoscode.springsecurity.security.UserRole.*;
+import static com.amigoscode.springsecurity.security.ApplicationUserPermission.COURSE_WRITE;
+import static com.amigoscode.springsecurity.security.ApplicationUserRole.*;
 
 @Configuration
-public class SecurityConfig {
+public class ApplicationSecurityConfig {
+
+    private final PasswordEncoder passwordEncoder;
+    private final ApplicationUserService applicationUserService;
+
+    @Autowired
+    public ApplicationSecurityConfig(PasswordEncoder passwordEncoder, ApplicationUserService applicationUserService) {
+        this.passwordEncoder = passwordEncoder;
+        this.applicationUserService = applicationUserService;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -39,49 +46,33 @@ public class SecurityConfig {
                 .formLogin()
                 .loginPage("/login").permitAll()
                 .defaultSuccessUrl("/courses")
+                .passwordParameter("password")
+                .usernameParameter("username")
                 .and()
                 .rememberMe()
-                    .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(21))
-                    .key("somethingversysecure")
+                .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(21))
+                .key("somethingversysecure")
+                .rememberMeParameter("remember-me")
                 .and()
                 .logout()
                 .logoutUrl("/logout")
                 .clearAuthentication(true)
-                .logoutSuccessUrl("/login")
                 .deleteCookies("JSESSIONID", "remember-me")
                 .invalidateHttpSession(true)
+                .logoutSuccessUrl("/login")
                 .and()
+                .authenticationProvider(daoAuthenticationProvider())
                 .build();
     }
+
+
 
     @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-        UserDetails annaSmithUser = User.builder()
-                .username("annasmith")
-                .password(passwordEncoder.encode("password"))
-//                .roles(STUDENT.name()) // ROLE_STUDENT
-                .authorities(STUDENT.getGrantedAuthorities())
-                .build();
-        UserDetails lindaUser = User.builder()
-                .username("linda")
-                .password(passwordEncoder.encode("password"))
-//                .roles(ADMIN.name()) // ROLE_ADMIN
-                .authorities(ADMIN.getGrantedAuthorities())
-                .build();
-        UserDetails tomUser = User.builder()
-                .username("tom")
-                .password(passwordEncoder.encode("password"))
-//                .roles(ADMINTRAINEE.name()) // ROLE_ADMINTRAINEE
-                .authorities(ADMINTRAINEE.getGrantedAuthorities())
-                .build();
-
-        return new InMemoryUserDetailsManager(
-                annaSmithUser,
-                lindaUser,
-                tomUser
-        );
-
+    public DaoAuthenticationProvider daoAuthenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setPasswordEncoder(passwordEncoder);
+        provider.setUserDetailsService(applicationUserService);
+        return provider;
     }
-
 
 }
